@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, Args as ClapArgs};
+use clap::{Parser, Subcommand, Args as ClapArgs, ValueEnum};
 
 #[derive(Parser, Debug)]
 #[command(name = "GitVention")]
@@ -13,8 +13,7 @@ pub struct Args {
     pub command: Commands,
 
     #[command(flatten)]
-    title_rules: TitleRules
-
+    pub conventions: ConventionConfig,
 
 }
 
@@ -32,14 +31,39 @@ pub struct ValidationArgs {
 }
 
 #[derive(ClapArgs, Debug)]
-pub struct TitleRules {
-    #[arg(long="title.regex")]
-    regex: Option<String>
-}
-
-#[derive(ClapArgs, Debug)]
 pub struct GitConfig {
     /// absolute path to git repository /example/.git
     #[arg(long, short)]
     pub repository: Option<String>,
+}
+#[derive(ClapArgs, Debug)]
+pub struct ConventionConfig {
+    #[arg(long="title.match-regex", default_value_t=String::from(".*"))]
+    pub title_regex: String,
+    #[arg(long="title.max-length", default_value_t=72)]
+    pub title_max_length: u32,
+    #[arg(long="title.no-leading-whitespace", default_value_t=true)]
+    pub title_no_leading_whitespace: bool,
+}
+pub enum Convention {
+    TitleRegex(String),
+    TitleMaxLength(u32),
+    TitleNoLeadingWhitespace,
+}
+
+pub const CONVETION_TITLE_REGEX: &str = "title_regex";
+
+impl ConventionConfig{
+    pub fn title_conventions(&self) -> Vec<Convention>{
+        let mut conventions = vec![
+            Convention::TitleRegex(self.title_regex.to_owned()),
+            Convention::TitleMaxLength(self.title_max_length),
+        ];
+
+        if self.title_no_leading_whitespace {
+            conventions.push(Convention::TitleNoLeadingWhitespace)
+        }
+
+        return conventions
+    }
 }
